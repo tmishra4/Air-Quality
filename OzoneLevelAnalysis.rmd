@@ -19,6 +19,7 @@ Let us start by looking at the summary of dataset.
 ```{r airquality}
 ozone.df = airquality[,1:4]
 summary(ozone.df)
+dim(ozone.df)
 ```
 At initial look , most of the data looks consistent. Lets start by a pair plot.
 
@@ -41,20 +42,124 @@ Then , individual variables are significant . Although 42 missing values are del
 We also see, Wind has negative cofficient , suggesting a negative relationship with Ozone levels.
 
 Now . lets check the residual vs fitted plot for this model to check the error dispersion.
-```{r}
+```{r fig.width=5 , fig.height=4}
 plot(ozone.lm, which = 1, col = "blue")
 ```
 
 So , we see that model do not satisfy independent errors constant variance assumption of linear model. This is first indication , that there might be some more relationships in underlying data. This indicates that regression surface is non linear.
 
-Additive models can be used to check the nature of curvature in the regression surface. gam models are used , with transformations can be set to "smothers" , which is estimated by function. The curvature suggests type of transformations, that could be applied to explaintory variables.
+Additive models can be used to check the nature of curvature in the regression surface. gam models are used , with transformations can be set to "smo0thers" , which is estimated by function. The curvature suggests type of transformations, that could be applied to explaintory variables.
 
-```{r fig.height=10}
+```{r fig.height=7}
 library(mgcv)
 par(mfrow=c(2,2)) 
 ozone.gam = gam(Ozone ~ s(Solar.R) + s(Wind) + s(Temp), data = ozone.df)
-plot(ozone.gam, residuals = T , pch= 20)
+plot(ozone.gam, residuals = T , pch= 20, col="blue")
 
 
 ```
-A clear non-linear relationship can be seen 
+
+A clear non-linear relationship can be seen in wind.
+
+
+```{r fig.height=8, fig.width=14}
+library(tree)
+ozone.tree<-tree(Ozone~.,data=ozone.df) 
+plot(ozone.tree, col = "blue") 
+text(ozone.tree) 
+```
+
+
+
+```{r fig.height=8}
+
+
+coplot(ozone.df$Ozone~ ozone.df$Solar.R|ozone.df$Wind, col="blue",panel=panel.smooth, row=1)
+
+```
+
+
+So, now let us add interaction terms and square terms in the model . We will apply sequential elimination process to find the optimum model for this data.
+
+```{r}
+ozone.lm<-lm(Ozone~Temp*Wind*Solar.R+I(Solar.R^2)+I(Temp^2)+I(Wind^2), data = ozone.df)
+summary(ozone.lm) 
+```
+
+We see , that individual terms are significant , as we saw in our base model. The square terms for Temp and Wind are also significant. Since lm is based on added variable test, that means , every variable has sense to be in model , based on the variables added before. So we should not simply remove more than 1 non - significant terms straightforward, because removing a variable involved in any relationship, may make other variable significant for the model. However , we will first remove 3 interaction term , because both it make model too complex and it is also non-significant.
+
+```{r}
+ozone.lm2 = update(ozone.lm,~. -Temp:Wind:Solar.R) 
+summary(ozone.lm2)
+```
+
+Now, we remove Temp:Solar.R interaction as it has highest p-value among non-significant variables.
+
+```{r}
+ozone.lm3 = update(ozone.lm2,~. -Temp:Solar.R) 
+summary(ozone.lm3)
+```
+
+Now, we remove Temp:Wind interaction as it has highest p-value among non-significant variables.
+
+
+```{r}
+ozone.lm4 = update(ozone.lm3,~. -Temp:Wind) 
+summary(ozone.lm4)
+```
+
+Now, we see that Wind:Solar.R interaction is also not significant , so we would prune this term as well, simplifying our model further.
+
+```{r}
+ozone.lm5 = update(ozone.lm4,~. -Wind:Solar.R) 
+summary(ozone.lm5)
+```
+
+Now , we still find that square term for solar radiation is still non-significant, so we would remove this term as well.
+```{r}
+ozone.lm6 = update(ozone.lm5,~. -I(Solar.R^2)) 
+summary(ozone.lm6)
+```
+
+Now, that we have found all our current terms significant in the model , we would run diagnostics to check the model assumptions.
+```{r fig.height=8, fig.width=14}
+par(mfrow=c(3,3))
+plot(ozone.lm6, which=1:5, pch =20, col="blue")
+```
+Residual vs fitted plot , shows funnel effect, that is variance increases with mean of fitted values. QQ plot also shows, non-normality in errors, as it is right skewed. Cook's distance plot captures influential points. an observation which is more than 0.5 in cook's distance plot is considered to be influential point. Observation 117 is although close , but not influential. Residual Vs leverage plot , do not shows any obervation at extreme top right or extreme low right, suggesting there are no outliers and leverage points. An observation , with high residual deviance are called outlier , and an observation , which is unusual and can have high impact on fitter values are called HLP(High leverage points). An observation , which is both outlier and HLP are called Influential points.
+
+So ,we already tried transforming regressors, adding interaction terms, checking multi-collinearity,  we would now try to transform response , in order to meet error assumptions.
+
+Because , response does not have any zero values , we can try log model.
+
+```{r}
+ozone.lm7 = lm(log(Ozone) ~ Temp + Wind + Solar.R + I(Temp^2) + I(Wind^2), data = ozone.df)
+summary(ozone.lm7) 
+
+```
+In log model , we see square term for temp has become non-significant, so removing this term.
+
+
+```{r}
+ozone.lm8 = lm(log(Ozone) ~ Temp + Wind + Solar.R  + I(Wind^2), data = ozone.df)
+summary(ozone.lm8)
+```
+
+Now , let us check diagnostics.
+
+```{r fig.height=8, fig.width=14}
+par(mfrow=c(3,3)) 
+plot(ozone.lm8, which = 1:5, pch=20, col="blue")
+```
+
+We see , funnel effect in residual vs fitted plot have subsided.
+QQ plot , shows normality 
+Cook's distance plot , does not shows any observations greater than 0.5, so no influential data point.
+Same , goes with Residual vs leverage plot.
+
+Therefore, we can now say, that we have reached to a optimal model to better explain our data, after multiple iterations.
+We can utilizemodel , 
+
+Log(ozone) = 0.72 - 0.05 * Temp + 0.22 * Wind + 0.002 * Solar.R + 0.007 * (Wind)^2
+
+to determine impact of any of these regressors on ozone levels or to predict ozone levels for a given values of Temp, Wind speed and Solar radiation.
