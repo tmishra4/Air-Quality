@@ -1,0 +1,60 @@
+---
+title: "Interactions on Air Quality Data"
+author: "Tapas Mishra"
+date: "05/05/2019"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Interactions may be useful to model in situations where the impact of one factor may depend on the level of another factor.
+
+Interactions can involve just factors, just numeric regressors or both factors and numeric regressors.
+
+In this study , we will try to understand , how tree's can be useful to get some some insights on interactions among explantory variables. We will use air quality dataset for our analysis. We will evaluate how ozone concentration is related to solar rediation , wind and temperature.
+
+Let us start by looking at the summary of dataset.
+```{r airquality}
+ozone.df = airquality[,1:4]
+summary(ozone.df)
+```
+At initial look , most of the data looks consistent. Lets start by a pair plot.
+
+
+```{r pressure, echo=TRUE , warning=FALSE, fig.height=8}
+pairs(ozone.df, panel = panel.smooth)
+```
+
+At first look , we can see that , that ozone has string negative relationship with wind speed , somewhat positive relationship with Temp and a unclear or humped relationship with solar radiations.
+
+Let us create a simple multiple regression model using glm and understand some relationships.
+
+```{r warning=FALSE}
+ozone.lm = lm (Ozone ~ Solar.R + Wind + Temp , data = ozone.df )
+summary(ozone.lm)
+```
+
+So the overall p-value for f-statistic is very low , which suggest , all these predictors are required in the model, that is rejecting the null hypothsis of these predictors have zero cofficients. 
+Then , individual variables are significant . Although 42 missing values are deleted , we would live with that for now.
+We also see, Wind has negative cofficient , suggesting a negative relationship with Ozone levels.
+
+Now . lets check the residual vs fitted plot for this model to check the error dispersion.
+```{r}
+plot(ozone.lm, which = 1, col = "blue")
+```
+
+So , we see that model do not satisfy independent errors constant variance assumption of linear model. This is first indication , that there might be some more relationships in underlying data. This indicates that regression surface is non linear.
+
+Additive models can be used to check the nature of curvature in the regression surface. gam models are used , with transformations can be set to "smothers" , which is estimated by function. The curvature suggests type of transformations, that could be applied to explaintory variables.
+
+```{r fig.height=10}
+library(mgcv)
+par(mfrow=c(2,2)) 
+ozone.gam = gam(Ozone ~ s(Solar.R) + s(Wind) + s(Temp), data = ozone.df)
+plot(ozone.gam, residuals = T , pch= 20)
+
+
+```
+A clear non-linear relationship can be seen 
