@@ -1,7 +1,6 @@
 ---
 title: "Interactions on Air Quality Data"
 author: "Tapas Mishra"
-date: "05/05/2019"
 output: github_document
 ---
 
@@ -21,7 +20,7 @@ ozone.df = airquality[,1:4]
 summary(ozone.df)
 dim(ozone.df)
 ```
-At initial look , most of the data looks consistent. Lets start by a pair plot.
+At initial look , most of the data looks consistent except some missing values. We would ignore missing values at this moment. Lets start by a pair plot.
 
 
 ```{r pressure, echo=TRUE , warning=FALSE, fig.height=8}
@@ -48,7 +47,7 @@ plot(ozone.lm, which = 1, col = "blue")
 
 So , we see that model do not satisfy independent errors constant variance assumption of linear model. This is first indication , that there might be some more relationships in underlying data. This indicates that regression surface is non linear.
 
-Additive models can be used to check the nature of curvature in the regression surface. gam models are used , with transformations can be set to "smo0thers" , which is estimated by function. The curvature suggests type of transformations, that could be applied to explaintory variables.
+Additive models can be used to check the nature of curvature in the regression surface. gam models are used , with transformations can be set to "smoothers" , which is estimated by function. The curvature suggests type of transformations, that could be applied to explaintory variables.
 
 ```{r fig.height=7}
 library(mgcv)
@@ -62,21 +61,23 @@ plot(ozone.gam, residuals = T , pch= 20, col="blue")
 A clear non-linear relationship can be seen in wind.
 
 
-```{r fig.height=8, fig.width=14}
-library(tree)
-ozone.tree<-tree(Ozone~.,data=ozone.df) 
-plot(ozone.tree, col = "blue") 
-text(ozone.tree) 
-```
+A co-plot is worth trying to understand relationship of regressors with response , in effect of different levels of any other regressor.
 
-
-
-```{r fig.height=8}
+```{r fig.height=8, fig.width=12 ,results="hide"}
 
 
 coplot(ozone.df$Ozone~ ozone.df$Solar.R|ozone.df$Wind, col="blue",panel=panel.smooth, row=1)
 
 ```
+
+In different levels of wind , we do see different slopes , but the change in slopes are not very significant. Shows the interaction might be playing a role, however one thing it definetly shows , non-linerarity.
+
+```{r fig.height=8, fig.width=12, results="hide"}
+coplot(ozone.df$Ozone~ ozone.df$Temp|ozone.df$Wind, col="blue",panel=panel.smooth, row=1)
+```
+
+Same in this plot, we see slight difference in the slopes , suggesting some interaction effect.
+
 
 
 So, now let us add interaction terms and square terms in the model . We will apply sequential elimination process to find the optimum model for this data.
@@ -158,7 +159,7 @@ Cook's distance plot , does not shows any observations greater than 0.5, so no i
 Same , goes with Residual vs leverage plot.
 
 Therefore, we can now say, that we have reached to a optimal model to better explain our data, after multiple iterations.
-We can utilizemodel , 
+We can utilize model , 
 
 Log(ozone) = 0.72 - 0.05 * Temp + 0.22 * Wind + 0.002 * Solar.R + 0.007 * (Wind)^2
 

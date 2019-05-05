@@ -1,7 +1,6 @@
 Interactions on Air Quality Data
 ================
 Tapas Mishra
-05/05/2019
 
 Interactions may be useful to model in situations where the impact of
 one factor may depend on the level of another factor.
@@ -37,7 +36,8 @@ dim(ozone.df)
 
     ## [1] 153   4
 
-At initial look , most of the data looks consistent. Lets start by a
+At initial look , most of the data looks consistent except some missing
+values. We would ignore missing values at this moment. Lets start by a
 pair plot.
 
 ``` r
@@ -103,7 +103,7 @@ indicates that regression surface is non linear.
 
 Additive models can be used to check the nature of curvature in the
 regression surface. gam models are used , with transformations can be
-set to “smo0thers” , which is estimated by function. The curvature
+set to “smoothers” , which is estimated by function. The curvature
 suggests type of transformations, that could be applied to explaintory
 variables.
 
@@ -125,23 +125,29 @@ plot(ozone.gam, residuals = T , pch= 20, col="blue")
 
 A clear non-linear relationship can be seen in wind.
 
-``` r
-library(tree)
-ozone.tree<-tree(Ozone~.,data=ozone.df) 
-plot(ozone.tree, col = "blue") 
-text(ozone.tree) 
-```
-
-![](OzoneLevelAnalysis_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
+A co-plot is worth trying to understand relationship of regressors with
+response , in effect of different levels of any other
+regressor.
 
 ``` r
 coplot(ozone.df$Ozone~ ozone.df$Solar.R|ozone.df$Wind, col="blue",panel=panel.smooth, row=1)
 ```
 
+![](OzoneLevelAnalysis_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
+
+In different levels of wind , we do see different slopes , but the
+change in slopes are not very significant. Shows the interaction might
+be playing a role, however one thing it definetly shows ,
+non-linerarity.
+
+``` r
+coplot(ozone.df$Ozone~ ozone.df$Temp|ozone.df$Wind, col="blue",panel=panel.smooth, row=1)
+```
+
 ![](OzoneLevelAnalysis_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
 
-    ## 
-    ##  Missing rows: 5, 6, 10, 11, 25, 26, 27, 32, 33, 34, 35, 36, 37, 39, 42, 43, 45, 46, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 65, 72, 75, 83, 84, 96, 97, 98, 102, 103, 107, 115, 119, 150
+Same in this plot, we see slight difference in the slopes , suggesting
+some interaction effect.
 
 So, now let us add interaction terms and square terms in the model . We
 will apply sequential elimination process to find the optimum model for
@@ -472,7 +478,7 @@ greater than 0.5, so no influential data point. Same , goes with
 Residual vs leverage plot.
 
 Therefore, we can now say, that we have reached to a optimal model to
-better explain our data, after multiple iterations. We can utilizemodel
+better explain our data, after multiple iterations. We can utilize model
 ,
 
 Log(ozone) = 0.72 - 0.05 \* Temp + 0.22 \* Wind + 0.002 \* Solar.R +
