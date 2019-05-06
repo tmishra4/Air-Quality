@@ -12,7 +12,7 @@ Interactions may be useful to model in situations where the impact of one factor
 
 Interactions can involve just factors, just numeric regressors or both factors and numeric regressors.
 
-In this study , we will try to understand , how tree's can be useful to get some some insights on interactions among explantory variables. We will use air quality dataset for our analysis. We will evaluate how ozone concentration is related to solar rediation , wind and temperature.
+In this study , we will try to understand , We will use air quality dataset for our analysis. We will evaluate how ozone concentration is related to solar rediation , wind and temperature. We will try to build an optimum model using linear regression and in process , we would check several factors and remidies to build an optimal model.
 
 Let us start by looking at the summary of dataset.
 ```{r airquality}
@@ -29,7 +29,7 @@ pairs(ozone.df, panel = panel.smooth)
 
 At first look , we can see that , that ozone has string negative relationship with wind speed , somewhat positive relationship with Temp and a unclear or humped relationship with solar radiations.
 
-Let us create a simple multiple regression model using glm and understand some relationships.
+Let us create a simple multiple regression model using lm and understand some relationships.
 
 ```{r warning=FALSE}
 ozone.lm = lm (Ozone ~ Solar.R + Wind + Temp , data = ozone.df )
@@ -59,6 +59,14 @@ plot(ozone.gam, residuals = T , pch= 20, col="blue")
 ```
 
 A clear non-linear relationship can be seen in wind.
+
+A quick check on VIF (Variable Inflation Fator) suggests  there isn’t an issue with multicolinearity. Any value greater than 5 shows some multicolinearity and value close to 10 shows strong multicolinearity.
+
+```{r}
+Xmat=model.matrix(ozone.lm)[,-1]
+diag(solve(cor(Xmat)))
+```
+
 
 
 A co-plot is worth trying to understand relationship of regressors with response , in effect of different levels of any other regressor.

@@ -8,11 +8,11 @@ one factor may depend on the level of another factor.
 Interactions can involve just factors, just numeric regressors or both
 factors and numeric regressors.
 
-In this study , we will try to understand , how tree’s can be useful to
-get some some insights on interactions among explantory variables. We
-will use air quality dataset for our analysis. We will evaluate how
-ozone concentration is related to solar rediation , wind and
-temperature.
+In this study , we will try to understand , We will use air quality
+dataset for our analysis. We will evaluate how ozone concentration is
+related to solar rediation , wind and temperature. We will try to build
+an optimum model using linear regression and in process , we would check
+several factors and remidies to build an optimal model.
 
 Let us start by looking at the summary of dataset.
 
@@ -50,8 +50,8 @@ At first look , we can see that , that ozone has string negative
 relationship with wind speed , somewhat positive relationship with Temp
 and a unclear or humped relationship with solar radiations.
 
-Let us create a simple multiple regression model using glm and
-understand some relationships.
+Let us create a simple multiple regression model using lm and understand
+some relationships.
 
 ``` r
 ozone.lm = lm (Ozone ~ Solar.R + Wind + Temp , data = ozone.df )
@@ -125,6 +125,18 @@ plot(ozone.gam, residuals = T , pch= 20, col="blue")
 
 A clear non-linear relationship can be seen in wind.
 
+A quick check on VIF (Variable Inflation Fator) suggests there isn’t an
+issue with multicolinearity. Any value greater than 5 shows some
+multicolinearity and value close to 10 shows strong multicolinearity.
+
+``` r
+Xmat=model.matrix(ozone.lm)[,-1]
+diag(solve(cor(Xmat)))
+```
+
+    ##  Solar.R     Wind     Temp 
+    ## 1.095253 1.329070 1.431367
+
 A co-plot is worth trying to understand relationship of regressors with
 response , in effect of different levels of any other
 regressor.
@@ -133,7 +145,7 @@ regressor.
 coplot(ozone.df$Ozone~ ozone.df$Solar.R|ozone.df$Wind, col="blue",panel=panel.smooth, row=1)
 ```
 
-![](OzoneLevelAnalysis_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
+![](OzoneLevelAnalysis_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
 
 In different levels of wind , we do see different slopes , but the
 change in slopes are not very significant. Shows the interaction might
@@ -144,7 +156,7 @@ non-linerarity.
 coplot(ozone.df$Ozone~ ozone.df$Temp|ozone.df$Wind, col="blue",panel=panel.smooth, row=1)
 ```
 
-![](OzoneLevelAnalysis_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
+![](OzoneLevelAnalysis_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
 Same in this plot, we see slight difference in the slopes , suggesting
 some interaction effect.
@@ -379,7 +391,7 @@ par(mfrow=c(3,3))
 plot(ozone.lm6, which=1:5, pch =20, col="blue")
 ```
 
-![](OzoneLevelAnalysis_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+![](OzoneLevelAnalysis_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
 Residual vs fitted plot , shows funnel effect, that is variance
 increases with mean of fitted values. QQ plot also shows, non-normality
 in errors, as it is right skewed. Cook’s distance plot captures
@@ -470,7 +482,7 @@ par(mfrow=c(3,3))
 plot(ozone.lm8, which = 1:5, pch=20, col="blue")
 ```
 
-![](OzoneLevelAnalysis_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
+![](OzoneLevelAnalysis_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
 
 We see , funnel effect in residual vs fitted plot have subsided. QQ plot
 , shows normality Cook’s distance plot , does not shows any observations
